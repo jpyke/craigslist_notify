@@ -41,6 +41,8 @@ class Search:
     query: str
     by: str
     identifier: str
+    min_price: str
+    max_price: str
 
 
 def to_search_data(yaml_dict) -> Search:
@@ -48,6 +50,8 @@ def to_search_data(yaml_dict) -> Search:
         region=yaml_dict['region'],
         query=yaml_dict['query'],
         by=yaml_dict['by'],
+        min_price=yaml_dict['min_price'],
+        max_price=yaml_dict['max_price'],
         identifier=''.join(sorted(yaml_dict.values()))
     )
 
@@ -96,7 +100,7 @@ def termux_schedule():
 
 def get_current_listings(search: Search) -> List[Listing]:
     res = requests.get(
-        f'http://{search.region}.craigslist.org/search/{BY_ROUTES[search.by]}?sort=rel&query={urllib.parse.quote(search.query)}',
+        f'http://{search.region}.craigslist.org/search/{BY_ROUTES[search.by]}?sort=rel&max_price={urllib.parse.quote(search.max_price)}&min_price={urllib.parse.quote(search.min_price)}&query={urllib.parse.quote(search.query)}',
     ).text
 
     soup = BeautifulSoup(res, "lxml")
