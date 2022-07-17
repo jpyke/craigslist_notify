@@ -43,6 +43,7 @@ class Search:
     identifier: str
     min_price: str
     max_price: str
+    category_code: str
 
 
 def to_search_data(yaml_dict) -> Search:
@@ -52,6 +53,7 @@ def to_search_data(yaml_dict) -> Search:
         by=yaml_dict['by'],
         min_price=yaml_dict['min_price'],
         max_price=yaml_dict['max_price'],
+        category_code=yaml_dict['category_code'],
         identifier=''.join(sorted(yaml_dict.values()))
     )
 
@@ -66,9 +68,9 @@ class Listing:
 
 
 BY_ROUTES = {
-    'all': 'sss',
-    'owner': 'sso',
-    'dealer': 'ssq'
+    'all': '',
+    'owner': 'purveyor=owner&',
+    'dealer': 'purveyor=dealer&'
 }
 
 
@@ -99,9 +101,8 @@ def termux_schedule():
 
 
 def get_current_listings(search: Search) -> List[Listing]:
-    res = requests.get(
-        f'http://{search.region}.craigslist.org/search/{BY_ROUTES[search.by]}?sort=rel&max_price={urllib.parse.quote(search.max_price)}&min_price={urllib.parse.quote(search.min_price)}&query={urllib.parse.quote(search.query)}',
-    ).text
+    cl_url = f'http://{search.region}.craigslist.org/search/{urllib.parse.quote(search.category_code)}?{BY_ROUTES[search.by]}sort=rel&searchNearby=1&max_price={urllib.parse.quote(search.max_price)}&min_price={urllib.parse.quote(search.min_price)}&query={urllib.parse.quote(search.query)}'
+    res = requests.get(cl_url).text
 
     soup = BeautifulSoup(res, "lxml")
     elements = soup.findAll('a', {'class': 'result-title'})
@@ -121,7 +122,7 @@ def filter_out_known_listings(state, search: Search, listings: List[Listing]) ->
 def notify_new_and_update_state(state, search: Search):
     current_listings = get_current_listings(search)
     new_listings = filter_out_known_listings(state, search, current_listings)
-
+    print(f"{len(current_listings)} total listings, {len(new_listings)} new listings")
     for listing in new_listings:
         termux_notification(listing)
 
